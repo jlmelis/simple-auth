@@ -1,35 +1,43 @@
 <script>
-  export let name;
+  //import { onMount } from 'svelte';
+  //let loggedIn;
 
-  let userName;
-  let resultString;
+  const tokenStorageKey = 'simpleAuth-token';
+  const netlifyIdentity = window.netlifyIdentity;
 
-  async function helloWorldFunction() {
-    const response = await fetch(`/.netlify/functions/hello-world?name=${encodeURI(userName)}`);
-    const result = await response.json();
-    
-    resultString = result.message;
+  $: loggedIn = localStorage.getItem(tokenStorageKey) !== null;
+
+  function logIn() {
+    netlifyIdentity.open();
   }
 
-  function handleClick() {
-    if (userName && userName.length > 0) {
-      helloWorldFunction();
-    }
+  netlifyIdentity.on('login', async() => {
+    const token = await netlifyIdentity.currentUser().jwt();
+    localStorage.setItem(tokenStorageKey, token);
+  });
+
+  function logOut() {
+    netlifyIdentity.logout();
   }
+
+  netlifyIdentity.on('logout', () => {
+    localStorage.removeItem(tokenStorageKey);
+  });
 </script>
 
 <main>
-	<h1>Hello {name}!</h1>
-  <p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
-  
+  {#if !loggedIn}
   <div>
-    <h3>Call Lamba function!</h3>
-    <input bind:value={userName} placeholder="enter name" >
-    <button on:click={handleClick}>Call Function</button>
-    <br />
-    <span>Result from function: </span>
-    <strong>{resultString || ''}</strong>
+    <h1>Super Secret Stuff</h1>
+    <p>🔐 only my bestest friends can see this content</p>
+    <button on:click={logIn}>Log in / signup to be my best friend</button>
   </div>
+  {:else}
+  <div>
+    <div></div>
+    <button on:click={logOut}>Log out</button> 
+  </div>
+  {/if}
 </main>
 
 <style>
